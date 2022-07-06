@@ -60,7 +60,7 @@ A_post_slm = beamA #image
 phases = np.multiply(math.pi, [0, 1/2, 1, 3/2])
 numPhases = 4
 reconstruction = [[0 for i in range(maskCols)] for j in range(maskRows)] #results from intensity reconstruction (w/o coincidence counting)
-reconstruction2 = [[0 for i in range(maskCols)] for j in range(maskRows)] #comparison
+
 
 for i in range(maskRows): # i,j are position of k/-k photons
     for j in range(maskCols): 
@@ -81,33 +81,22 @@ for i in range(maskRows): # i,j are position of k/-k photons
         c = phase(complex(real, imag))
         if c < 0:
             c += 2*math.pi #wraps negative phase shift to positive
-        reconstruction[maskRows-1-i][maskCols-1-j] = c
-        reconstruction2[maskRows-1-i][maskCols-1-j] = 2*math.pi - c #2pi - results yields original phase shift
+        reconstruction[i][j] = 2*math.pi - c #2pi - results yields original phase shift
+ 
 
 # Begin Plotting of Results
 axes=[]
 fig = plt.figure()
 
-axes.append(fig.add_subplot(1, 4, 1)) # reconstruction
+axes.append(fig.add_subplot(1, 2, 1)) # reconstruction
 plt.imshow( reconstruction, cmap = cm.gray)
 subplot_title=("Reconstructed")
 axes[-1].set_title(subplot_title)  
 
-axes.append(fig.add_subplot(1, 4, 2)) #Adjusted Reconstruction
-plt.imshow( reconstruction2, cmap = cm.gray)
-subplot_title=("Adjusted Reconstruction")
-axes[-1].set_title(subplot_title)
-
-
-axes.append(fig.add_subplot(1, 4, 3)) #slm
+axes.append(fig.add_subplot(1, 2, 2)) #slm
 plt.imshow( slm, cmap = cm.gray)
-subplot_title=("Reference Phase")
-axes[-1].set_title(subplot_title)  
-
-axes.append(fig.add_subplot(1, 4, 4)) #image
-plt.imshow( imageArray, cmap = cm.gray)
 subplot_title=("Reference Image")
-axes[-1].set_title(subplot_title)  
+axes[-1].set_title(subplot_title)   
 
 fig.tight_layout() 
 plt.show()

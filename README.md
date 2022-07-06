@@ -1,9 +1,9 @@
 # xraySimulation
 Eric Christie
-Based on simulation created by Taylor Barton
+Based on simulation created by Taylor Barton (maskSim)
 
 Models photons from a laser reflecting off of the Spatial Light Modulator
-and reconstructed.
+and reconstruction.
 
 slmSim creates a photon with magnitude and phase based on a gaussian array and 
 the SLM image is reconstructed using the theoretical R(k) equation
