@@ -52,6 +52,37 @@ def scaleArray(array, newMax, newMin):
     newArray += newMin
     return newArray
 
+#can plot any number of arrays with titles, scaled booleans select if graphed 0-2pi or not
+def plot(arrays, titles, scaled):
+    axes=[]
+    fig = plt.figure()
+    
+    for plotNum in range(len(arrays)): #repeats for each array given
+        axes.append(fig.add_subplot(1, len(arrays), plotNum+1))
+
+        if(scaled[plotNum]): #bool to see if scaled or not
+            plt.imshow(arrays[plotNum], cmap = cm.twilight, vmin = 0, vmax = 2*math.pi)
+            
+        else:   
+            plt.imshow(arrays[plotNum], cmap = cm.gray)
+        plt.colorbar(shrink = 0.5)
+        
+        if plotNum < len(titles):
+            subplot_title = titles[plotNum]
+            axes[-1].set_title(subplot_title)
+
+    fig.tight_layout()
+    plt.show()  #outputs plots
+
+def gaussian(): #creates gaussian array (Taylor's code)
+    gx, gy = np.meshgrid(np.linspace(-1,1,maskCols*2), np.linspace(-1,1,maskRows))
+    dst = np.sqrt(gx*gx+gy*gy)
+    
+    sigma = 1 # Initializing sigma and muu
+    muu = 0.000
+    
+    gauss = np.exp(-( (dst-muu)**2 / ( 2.0 * sigma**2 ) ) ) # Calculating Gaussian array
+    return gauss
 
 
 ###### Begin Simulation ######
@@ -65,49 +96,18 @@ imageArray = asarray(testImage)
 maskRows = imageArray.shape[0] #numRows must be even, so I can split the beam in half
 maskCols = imageArray.shape[1]
 
-imageArray = np.arange(0, (maskRows*maskCols), 1, np.uint8)
-imageArray = np.reshape(imageArray, (maskRows, maskCols))
 
 slm = np.multiply(imageArray, 2*math.pi/255.0) # scales image to 0-2pi phase changes
 
 #Gaussian array to simulate laser intensity
-# Initializing value of x-axis and y-axis
-# in the range -2 to +2
-gx, gy = np.meshgrid(np.linspace(-1,1,maskCols*2), np.linspace(-1,1,maskRows))
-dst = np.sqrt(gx*gx+gy*gy)
- 
-sigma = 1 # Initializing sigma and muu
-muu = 0.000
- 
-gauss = np.exp(-( (dst-muu)**2 / ( 2.0 * sigma**2 ) ) ) # Calculating Gaussian array
+gauss = gaussian()
 
 #scale gauss for phase distortion
 psi0_correction = scaleArray(gauss, 1, -8) #scales gauss to psi0_correction mask
-
+psi0_correction = np.mod(psi0_correction, 2*math.pi) # wraps to 0-2pi
 
 psi0 = np.multiply(-1, psi0_correction) # correction is opposite of initial psi0
 
-# Plotting of incoming laser characteristics
-#axes=[]
-#fig = plt.figure()
-
-#axes.append(fig.add_subplot(1, 3, 1)) # reconstruction
-#plt.imshow( gauss, cmap = cm.gray)
-#subplot_title=("Intensity")
-#axes[-1].set_title(subplot_title)  
-
-#axes.append(fig.add_subplot(1, 3, 2)) #image
-#plt.imshow( psi0, cmap = cm.gray)
-#subplot_title=("Phase")
-#axes[-1].set_title(subplot_title)  
-
-#axes.append(fig.add_subplot(1, 3, 3)) #image
-#plt.imshow( psi0_correction, cmap = cm.gray)
-#subplot_title=("Phase Correction")
-#axes[-1].set_title(subplot_title) 
-
-#fig.tight_layout() 
-#plt.show()
 
 
 
@@ -138,7 +138,7 @@ for i in range(maskRows): # i,j are position of k/-k photons
     for j in range(maskCols): 
         
         #Alice
-        beamA[i][j].changePhase(slm[i][j])
+        beamA[i][j].changePhase(slm[i][j]) #adds phase change from slm to beamA
 
         #Bob
         phaseIntensity = [0.0 for p in range(numPhases)] #will save calculated values
@@ -150,16 +150,17 @@ for i in range(maskRows): # i,j are position of k/-k photons
         #do reconstruction math with noise
         real = phaseIntensity[0] - phaseIntensity[2] # calculate values
         imag = phaseIntensity[1] - phaseIntensity[3]
-        real = real * random.uniform(ampNoiseLow, ampNoiseHigh) # detector noise
-        imag = imag * random.uniform(ampNoiseLow, ampNoiseHigh)
+        #real = real * random.uniform(ampNoiseLow, ampNoiseHigh) # detector noise
+        #imag = imag * random.uniform(ampNoiseLow, ampNoiseHigh)
 
-        #pulls out phase, and uses superimposed correction to subtract initial phase change
-        c = phase(complex(real, imag)) - slm_B_mask[maskRows-1-i][maskCols-1-j]
+        # calcualtes phase from R(k)'s
+        c = phase(complex(real, imag))
+        #c -= slm_B_mask[i][maskCols-1-j] # uses psi0 correction on B to remove initial phase shift
+        c -= psi0_correction[i][j] #A's side of the correction mask
 
-        if c < 0: #wraps negative phase shift to positive
-            c += 2*math.pi 
+        c %= 2*math.pi
 
-        reconstruction[i][j] = 2*math.pi - c 
+        reconstruction[i][j] = 2*math.pi - c
         accuracy[i][j] = reconstruction[i][j] - slm[i][j]
         if accuracy[i][j] > math.pi:
             accuracy[i][j] -= 2*math.pi
@@ -170,27 +171,5 @@ for i in range(maskRows): # i,j are position of k/-k photons
 print("Mean Accuracy: "+ str(np.mean(np.abs(accuracy))) + "\t[" + str(np.min(accuracy)) + ", " + str(np.max(accuracy)) + "]")
 
 # Begin Plotting of Results
-axes=[]
-fig = plt.figure()
-
-axes.append(fig.add_subplot(1, 3, 1)) # reconstruction
-plt.imshow( reconstruction, cmap = cm.gray, vmin = 0, vmax = 2*math.pi)
-subplot_title=("Reconstructed")
-axes[-1].set_title(subplot_title)  
-
-axes.append(fig.add_subplot(1, 3, 2)) #image
-plt.imshow( slm, cmap = cm.gray, vmin = 0, vmax = 2*math.pi)
-subplot_title=("Reference Image")
-axes[-1].set_title(subplot_title)  
-
-axes.append(fig.add_subplot(1, 3, 3)) #image
-plt.imshow( accuracy, cmap = cm.gray, vmin = -2*math.pi, vmax = 2*math.pi)
-subplot_title=("Accuracy")
-axes[-1].set_title(subplot_title) 
-
-fig.tight_layout() 
-plt.show()
-
-
-        
+plot([reconstruction, slm, accuracy], ["Reconstruction", "Reference", "Accuracy"], [True, True, False])
 
