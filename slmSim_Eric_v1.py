@@ -34,7 +34,7 @@ testImage = Image.open("byu_test.png")
 testImage = ImageOps.grayscale(testImage)
 imageArray = asarray(testImage)
 
-maskRows = imageArray.shape[0] #numRows must be even, so I can split the beam in half
+maskRows = imageArray.shape[0] 
 maskCols = imageArray.shape[1]
 
 slm = np.multiply(imageArray, 2*math.pi/255.0) # scales image to 0-2pi phase changes
@@ -60,7 +60,7 @@ A_post_slm = beamA #image
 phases = np.multiply(math.pi, [0, 1/2, 1, 3/2])
 numPhases = 4
 reconstruction = [[0 for i in range(maskCols)] for j in range(maskRows)] #results from intensity reconstruction (w/o coincidence counting)
-
+accuracy = [[0 for i in range(maskCols)] for j in range(maskRows)]
 
 for i in range(maskRows): # i,j are position of k/-k photons
     for j in range(maskCols): 
@@ -82,21 +82,27 @@ for i in range(maskRows): # i,j are position of k/-k photons
         if c < 0:
             c += 2*math.pi #wraps negative phase shift to positive
         reconstruction[i][j] = 2*math.pi - c #2pi - results yields original phase shift
+        accuracy[i][j] = np.abs(reconstruction[i][j] - slm[i][j])
  
 
 # Begin Plotting of Results
 axes=[]
 fig = plt.figure()
 
-axes.append(fig.add_subplot(1, 2, 1)) # reconstruction
-plt.imshow( reconstruction, cmap = cm.gray)
+axes.append(fig.add_subplot(1, 3, 1)) # reconstruction
+plt.imshow( reconstruction, cmap = cm.gray, vmin = 0, vmax = 2*math.pi)
 subplot_title=("Reconstructed")
 axes[-1].set_title(subplot_title)  
 
-axes.append(fig.add_subplot(1, 2, 2)) #slm
-plt.imshow( slm, cmap = cm.gray)
+axes.append(fig.add_subplot(1, 3, 2)) #slm
+plt.imshow( slm, cmap = cm.gray, vmin = 0, vmax = 2*math.pi)
 subplot_title=("Reference Image")
-axes[-1].set_title(subplot_title)   
+axes[-1].set_title(subplot_title)  
+
+axes.append(fig.add_subplot(1, 3, 3)) #accuracy
+plt.imshow( accuracy, cmap = cm.gray)
+subplot_title=("Accuracy")
+axes[-1].set_title(subplot_title) 
 
 fig.tight_layout() 
 plt.show()
