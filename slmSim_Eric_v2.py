@@ -108,7 +108,7 @@ psi0_correction = np.mod(psi0_correction, 2*math.pi) # wraps to 0-2pi
 
 psi0 = np.multiply(-1, psi0_correction) # correction is opposite of initial psi0
 
-
+plot([psi0, psi0_correction], ["Static Phase Distortion", "Correction"], [False, False])
 
 
 
@@ -142,16 +142,16 @@ for i in range(maskRows): # i,j are position of k/-k photons
 
         #Bob
         phaseIntensity = [0.0 for p in range(numPhases)] #will save calculated values
-        for p in range(numPhases): #goes through all 4 phase shifts and calculates R's
+        for p in range(numPhases): #goes through all 4 phase shifts and calculates R's - Paper Methods Eq 6
             # beamA = psi0 + slm
             # beamB = psi0 + correction + phase change = phase change
             phaseIntensity[p] = 0.5 * (1 + math.cos(beamB[i][j].getPhase() + slm_B_mask[i][j] + phases[p] + beamA[i][j].getPhase())) #takes inital beamB, adds this phase change, and then A            
         
         #do reconstruction math with noise
-        real = phaseIntensity[0] - phaseIntensity[2] # calculate values
+        real = phaseIntensity[0] - phaseIntensity[2] # calculate values - Eq 1 from paper
         imag = phaseIntensity[1] - phaseIntensity[3]
-        #real = real * random.uniform(ampNoiseLow, ampNoiseHigh) # detector noise
-        #imag = imag * random.uniform(ampNoiseLow, ampNoiseHigh)
+        real = real * random.uniform(ampNoiseLow, ampNoiseHigh) # detector noise
+        imag = imag * random.uniform(ampNoiseLow, ampNoiseHigh)
 
         # calcualtes phase from R(k)'s
         c = phase(complex(real, imag))
@@ -172,4 +172,3 @@ print("Mean Accuracy: "+ str(np.mean(np.abs(accuracy))) + "\t[" + str(np.min(acc
 
 # Begin Plotting of Results
 plot([reconstruction, slm, accuracy], ["Reconstruction", "Reference", "Accuracy"], [True, True, False])
-
