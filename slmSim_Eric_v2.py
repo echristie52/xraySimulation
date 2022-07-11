@@ -23,6 +23,7 @@ import random
 ampNoiseLow = 0.98 #amplifier noise values
 ampNoiseHigh = 1.02 
 
+#photon class to store magnitude and phase
 class Photon:
     def __init__(self, intensity, phase): #initialized Photon
         self.intensity = intensity
@@ -42,6 +43,7 @@ class Photon:
 
     def changePhase(self, phase):
         self.phase += phase
+        self.phase %= 2*math.pi # keeps in range [0, 2pi]
     
 # scales an array to a new max/min
 def scaleArray(array, newMax, newMin):
@@ -104,10 +106,11 @@ gauss = gaussian()
 
 #scale gauss for phase distortion
 psi0_correction = scaleArray(gauss, 1, -8) #scales gauss to psi0_correction mask
-psi0_correction = np.mod(psi0_correction, 2*math.pi) # wraps to 0-2pi
+#psi0_correction = np.mod(psi0_correction, 2*math.pi) # wraps to 0-2pi - no effect on result
 
 psi0 = np.multiply(-1, psi0_correction) # correction is opposite of initial psi0
 
+#plot phase distortion and correction masks
 plot([psi0, psi0_correction], ["Static Phase Distortion", "Correction"], [False, False])
 
 
@@ -154,11 +157,11 @@ for i in range(maskRows): # i,j are position of k/-k photons
         imag = imag * random.uniform(ampNoiseLow, ampNoiseHigh)
 
         # calcualtes phase from R(k)'s
-        c = phase(complex(real, imag))
+        c = phase(complex(real, imag)) #extracts phase
         #c -= slm_B_mask[i][maskCols-1-j] # uses psi0 correction on B to remove initial phase shift
         c -= psi0_correction[i][j] #A's side of the correction mask
 
-        c %= 2*math.pi
+        c %= 2*math.pi # wraps all values into [0, 2pi]
 
         reconstruction[i][j] = 2*math.pi - c
         accuracy[i][j] = reconstruction[i][j] - slm[i][j]
