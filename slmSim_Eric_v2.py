@@ -89,7 +89,7 @@ def gaussian(): #creates gaussian array (Taylor's code)
 plt.close('all')
 
 #open SLM image
-testImage = Image.open("byu_test.png")
+testImage = Image.open("byu_cougar.jpg")
 testImage = ImageOps.grayscale(testImage)
 imageArray = asarray(testImage)
 

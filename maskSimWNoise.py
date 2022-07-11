@@ -194,7 +194,7 @@ for i in range(maskRows):
         real = real * random.uniform(ampNoiseLow, ampNoiseHigh)
         imag = imag * random.uniform(ampNoiseLow, ampNoiseHigh)
         c = complex(real, imag)
-        correlation[i][k] = -phase(c)
+        correlation[i][k] = 2*math.pi -phase(c)
         
         real_recon = extractedR[0][i][k] - extractedR[2][i][k]
         imag_recon = extractedR[1][i][k] - extractedR[3][i][k]
