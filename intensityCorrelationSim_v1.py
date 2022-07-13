@@ -91,13 +91,13 @@ def uploadImage(filename):
 
 
 ###### Beginning of Simulation ######
-uploadImage("byu_test.png")
+uploadImage("diagonal_test4.png")
 
 # Constants
 numPhases = 4
 phases = np.multiply(math.pi, [0, 1/2, 1, 3/2])
-totalFrames = 1000
-numFrames = totalFrames / numPhases
+totalFrames = 8#1000 # in paper, either 2.5e6 or 5e6
+numFrames = int(totalFrames / numPhases)
 detector_efficiency = 0.48
 
 
@@ -108,25 +108,34 @@ detector_efficiency = 0.48
 frames = [[[[0 for j in range(2*imageCols)] for i in range(imageRows)] for l in range(numFrames)] for p in range(numPhases)]
 
 
-# Reconstruct from Intensity Frames
 
+
+
+
+# Reconstruct from Intensity Frames
 
 R_value = [0 for p in range(numPhases)] #rewritten for each pixel
 reconstruction = [[0 for i in range(imageRows)] for j in range(imageCols)]
 
+# Loops through i,j for +/- k
+# for each phase shift, calculates intensity correlation from all frames
+# Reconstructs with Eq 1
 for i in range(imageRows):
     for j in range(imageCols):
         for p in range(numPhases):
             sum1 = 0
             sum2 = 0
 
+            #Equation from Supplementary Information 1 (similar to Methods, Eq 4)
             for l in range(numFrames):
-                sum1 += frames[p][l][imageRows+i][j] * frames[p][l][imageRows-i][imageCols-1-j]
+                # I_l(k) * I_l(-k)
+                sum1 += frames[p][l][i][imageCols+j] * frames[p][l][imageRows-1-i][imageCols-1-j]
             
             for l in range(numFrames - 1):
-                sum2 += frames[p][l][imageRows+i][j] * frames[p][l+1][imageRows-i][imageCols-1-j]
+                # I_l(k) * I_(l+1)(-k)
+                sum2 += frames[p][l][i][imageCols+j] * frames[p][l+1][imageRows-1-i][imageCols-1-j]
             
-            R_value[p] = (sum1 / numFrames) - (sum2 / (numFrames-1))
+            R_value[p] = ( sum1 / numFrames ) - ( sum2 / (numFrames-1) )
         
         real = R_value[0] - R_value[2] #reconstruction values
         imag = R_value[1] - R_value[3]

@@ -91,7 +91,7 @@ def gaussian(): #creates gaussian array (Taylor's code)
 plt.close('all')
 
 #open SLM image
-testImage = Image.open("byu_cougar.jpg")
+testImage = Image.open("byu_test.png")
 testImage = ImageOps.grayscale(testImage)
 imageArray = asarray(testImage)
 
@@ -111,7 +111,7 @@ psi0_correction = scaleArray(gauss, 1, -8) #scales gauss to psi0_correction mask
 psi0 = np.multiply(-1, psi0_correction) # correction is opposite of initial psi0
 
 #plot phase distortion and correction masks
-plot([psi0, psi0_correction], ["Static Phase Distortion", "Correction"], [False, False])
+#plot([psi0, psi0_correction], ["Static Phase Distortion", "Correction"], [False, False])
 
 
 
@@ -164,6 +164,7 @@ for i in range(maskRows): # i,j are position of k/-k photons
         c %= 2*math.pi # wraps all values into [0, 2pi]
 
         reconstruction[i][j] = 2*math.pi - c
+
         accuracy[i][j] = reconstruction[i][j] - slm[i][j]
         if accuracy[i][j] > math.pi:
             accuracy[i][j] -= 2*math.pi

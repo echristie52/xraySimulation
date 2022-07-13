@@ -19,6 +19,28 @@ from PIL import ImageOps, Image
 from numpy import asarray
 import random
 
+#can plot any number of arrays with titles, scaled booleans select if graphed 0-2pi or not
+def plot(arrays, titles, scaled):
+    axes=[]
+    fig = plt.figure()
+    
+    for plotNum in range(len(arrays)): #repeats for each array given
+        axes.append(fig.add_subplot(1, len(arrays), plotNum+1))
+
+        if(scaled[plotNum]): #bool to see if scaled or not
+            plt.imshow(arrays[plotNum], cmap = cm.twilight, vmin = 0, vmax = 2*math.pi)
+            
+        else:   
+            plt.imshow(arrays[plotNum], cmap = cm.gray)
+        plt.colorbar(shrink = 0.5)
+        
+        if plotNum < len(titles):
+            subplot_title = titles[plotNum]
+            axes[-1].set_title(subplot_title)
+
+    fig.tight_layout()
+    plt.show()  #outputs plots
+
 
 ###### Begin Simulation ######
 plt.close('all')
@@ -70,42 +92,28 @@ for i in range(maskRows): # i,j are position of k/-k photons
         #Bob phase changes
         phaseIntensity = [0 for p in range(numPhases)] #will save calculated values
         for p in range(numPhases): #goes through all 4 phase shifts and calculates R's
+            #phaseA = beamA + slmzz
+            #phaseB = beamB + phases
             phaseIntensity[p] = 0.5 * (1 + math.cos(beamB[i][j] + phases[p] + A_post_slm[i][j])) #takes inital beamB, adds this phase change, and then A
             
         
         #do reconstruction math with noise
-        real = phaseIntensity[0] - phaseIntensity[2]
+        real = phaseIntensity[0] - phaseIntensity[2] # values for Eq 1
         imag = phaseIntensity[1] - phaseIntensity[3]
-        real = real * random.uniform(ampNoiseLow, ampNoiseHigh)
+        real = real * random.uniform(ampNoiseLow, ampNoiseHigh) #low-level detector noise
         imag = imag * random.uniform(ampNoiseLow, ampNoiseHigh)
-        c = phase(complex(real, imag))
-        if c < 0:
-            c += 2*math.pi #wraps negative phase shift to positive
-        reconstruction[i][j] = 2*math.pi - c #2pi - results yields original phase shift
-        accuracy[i][j] = np.abs(reconstruction[i][j] - slm[i][j])
+        c = phase(complex(real, imag)) # extracts phase
+        
+        if c < 0: #wraps negative phase shift to positive
+            c += 2*math.pi
+
+        reconstruction[i][j] = 2*math.pi - c #(2pi - results) yields original phase shift
+        
+        accuracy[i][j] = np.abs(reconstruction[i][j] - slm[i][j]) # records difference for comparison
  
 
 # Begin Plotting of Results
-axes=[]
-fig = plt.figure()
-
-axes.append(fig.add_subplot(1, 3, 1)) # reconstruction
-plt.imshow( reconstruction, cmap = cm.gray, vmin = 0, vmax = 2*math.pi)
-subplot_title=("Reconstructed")
-axes[-1].set_title(subplot_title)  
-
-axes.append(fig.add_subplot(1, 3, 2)) #slm
-plt.imshow( slm, cmap = cm.gray, vmin = 0, vmax = 2*math.pi)
-subplot_title=("Reference Image")
-axes[-1].set_title(subplot_title)  
-
-axes.append(fig.add_subplot(1, 3, 3)) #accuracy
-plt.imshow( accuracy, cmap = cm.gray)
-subplot_title=("Accuracy")
-axes[-1].set_title(subplot_title) 
-
-fig.tight_layout() 
-plt.show()
+plot([reconstruction, slm, accuracy], ["Reconstructed", "Reference Image", "Accuracy"], [True, True, False])
         
         
 
