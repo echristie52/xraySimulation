@@ -91,7 +91,7 @@ def gaussian(): #creates gaussian array (Taylor's code)
 plt.close('all')
 
 #open SLM image
-testImage = Image.open("byu_test.png")
+testImage = Image.open("byu_cougar.jpg")
 testImage = ImageOps.grayscale(testImage)
 imageArray = asarray(testImage)
 
@@ -161,11 +161,12 @@ for i in range(maskRows): # i,j are position of k/-k photons
         #c -= slm_B_mask[i][maskCols-1-j] # uses psi0 correction on B to remove initial phase shift
         c -= psi0_correction[i][j] #A's side of the correction mask
 
-        c %= 2*math.pi # wraps all values into [0, 2pi]
+        c *= -1 # c is negative thetaA, pushes positive
+        c %= 2*math.pi #wrapping within 0-2pi
 
-        reconstruction[i][j] = 2*math.pi - c
+        reconstruction[i][j] = c # saves reconstruction
 
-        accuracy[i][j] = reconstruction[i][j] - slm[i][j]
+        accuracy[i][j] = slm[i][j] - reconstruction[i][j]
         if accuracy[i][j] > math.pi:
             accuracy[i][j] -= 2*math.pi
         elif accuracy[i][j] < -1*math.pi:

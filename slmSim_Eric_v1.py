@@ -52,7 +52,7 @@ ampNoiseLow = 0.98 #amplifier noise values
 ampNoiseHigh = 1.02 
 
 #open SLM image
-testImage = Image.open("byu_test.png")
+testImage = Image.open("byu_cougar.jpg")
 testImage = ImageOps.grayscale(testImage)
 imageArray = asarray(testImage)
 
@@ -104,10 +104,10 @@ for i in range(maskRows): # i,j are position of k/-k photons
         imag = imag * random.uniform(ampNoiseLow, ampNoiseHigh)
         c = phase(complex(real, imag)) # extracts phase
         
-        if c < 0: #wraps negative phase shift to positive
-            c += 2*math.pi
+        c *= -1 # c is negative thetaA, pushes positive
+        c %= 2*math.pi #wrapping within 0-2pi
 
-        reconstruction[i][j] = 2*math.pi - c #(2pi - results) yields original phase shift
+        reconstruction[i][j] = c # saves reconstruction
         
         accuracy[i][j] = np.abs(reconstruction[i][j] - slm[i][j]) # records difference for comparison
  
