@@ -92,17 +92,16 @@ def uploadImage(filename):
 
 
 ###### Beginning of Simulation ######
-uploadImage("diagonal_test4.png")
-#imageRows = 1
+uploadImage("diagonal_test4.png") #constants updated according to image
+#imageRows = 1 # hardcode available to test reconstruction w/o variance
 #imageCols = 1
 #slm = [[1 for j in range(imageCols)] for i in range(imageRows)]
 
 # Constants
 numPhases = 4
 phases = np.multiply(math.pi, [0, 1/2, 1, 3/2])
-#totalFrames = 1 # in paper, either 2.5e6 or 5e6
-numFrames = 10#int(totalFrames / numPhases)
-detector_efficiency = 0.48
+numFrames = 10 # number of frames per phase shift. In Paper, total frames is ~2.5e6
+detector_efficiency = 0.48 #from Paper, efficiency of their setup
 
 
 
@@ -115,21 +114,14 @@ frames = [[[[0 for j in range(2*imageCols)] for i in range(imageRows)] for l in 
 
 for p in range(numPhases):
     for l in range(numFrames):
-        #for i in range(imageRows):
-        #    for j in range(imageCols):
-        #        frames[p][l][i][j] = random.uniform(0.05,0.1)
-        #i = random.randint(0, imageRows-1) #random coincidences appearing
-        #j = random.randint(0, imageCols-1) #each pixel equally likely
-        i = l % imageRows
-        j = l % imageCols
+        i = random.randint(0, imageRows-1) #random coincidences appearing
+        j = random.randint(0, imageCols-1) #each pixel equally likely
 
-        phaseA = phase0 + phases[p]#experiences phase shift
-        phaseB = phase0 + slm[imageRows-1-i][imageCols-1-j] 
-
-        #pixel = intensity * math.cos(phase) #real portion of light
-
-        frames[p][l][i][imageCols+j] = intensity*math.cos(phaseB) #Bob side
-        frames[p][l][imageRows-1-i][imageCols-1-j] = intensity*math.cos(phaseA) #Alice side
+        # FIXME - Calculate values here
+        
+        #save calculated value here
+        frames[p][l][i][imageCols+j] = 1 #Bob side
+        frames[p][l][imageRows-1-i][imageCols-1-j] = 1 #Alice side
 
 
 
@@ -160,15 +152,16 @@ for i in range(imageRows):
                 # I_l(k) * I_(l+1)(-k)
                 sum2 += frames[p][l][i][imageCols+j] * frames[p][l+1][imageRows-1-i][imageCols-1-j]
             
-            R_value[p] = ( sum1 / numFrames ) - ( sum2 / (numFrames-1) )
+            # calculates R(k)   Eq 4
+            R_value[p] = ( sum1 / numFrames ) - ( sum2 / (numFrames-1) ) 
 
-        print(R_value)
+        print(R_value) #FIXME - tracking calculation
         real = R_value[0] - R_value[2] #reconstruction values
         imag = R_value[1] - R_value[3]
         
         c = cmath.phase(complex(real,imag)) #extracts phase
 
-        c *= -1 # c is negative thetaA, pushes positive
+        c *= -1 # c is negative thetaA, flips positive
         c %= 2*math.pi #wrapping within 0-2pi
 
         reconstruction[i][j] = c # saves reconstruction
@@ -180,7 +173,9 @@ for i in range(imageRows):
         elif accuracy[i][j] < -1*math.pi:
             accuracy[i][j] += 2*math.pi
 
-# plot Reconstruction
-for l in range(numFrames):
+
+for l in range(numFrames): # seeing how individual frames are being processed
     plot([frames[0][l], frames[1][l], frames[2][l], frames[3][l]], ["0", "pi/2", "pi", "3pi/2"], [False, False, False, False])
+
+# plot Reconstruction    
 plot([reconstruction, slm, accuracy], ["Reconstruction", "Reference", "Accuracy"], [False, True, False])
