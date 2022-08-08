@@ -98,17 +98,17 @@ imageArray = asarray(testImage)
 maskRows = imageArray.shape[0] #numRows must be even, so I can split the beam in half
 maskCols = imageArray.shape[1]
 
-
 slm = np.multiply(imageArray, 2*math.pi/255.0) # scales image to 0-2pi phase changes
 
 #Gaussian array to simulate laser intensity
-gauss = gaussian()
+gauss = gaussian() #currently does not affect simulation
 
+### Introducing Static Phase Disorder from incoming beam (calculated here)
 #scale gauss for phase distortion
-psi0_correction = scaleArray(gauss, 1, -8) #scales gauss to psi0_correction mask
+psi0_correction = scaleArray(gauss, 1, -8) #scales gauss to psi0_correction mask from Paper, applied to Bob
 #psi0_correction = np.mod(psi0_correction, 2*math.pi) # wraps to 0-2pi - no effect on result
 
-psi0 = np.multiply(-1, psi0_correction) # correction is opposite of initial psi0
+psi0 = np.multiply(-1, psi0_correction) # actual Phase Disorder, what will be applied to incoming beam
 
 #plot phase distortion and correction masks
 #plot([psi0, psi0_correction], ["Static Phase Distortion", "Correction"], [False, False])
@@ -146,28 +146,32 @@ for i in range(maskRows): # i,j are position of k/-k photons
         #Bob
         phaseIntensity = [0.0 for p in range(numPhases)] #will save calculated values
         for p in range(numPhases): #goes through all 4 phase shifts and calculates R's - Paper Methods Eq 6
+            # R(k)  = 0.5 * ( 1 + cos(phaseB + phaseA) )
             # beamA = psi0 + slm
             # beamB = psi0 + correction + phase change = phase change
             phaseIntensity[p] = 0.5 * (1 + math.cos(beamB[i][j].getPhase() + slm_B_mask[i][j] + phases[p] + beamA[i][j].getPhase())) #takes inital beamB, adds this phase change, and then A            
         
         #do reconstruction math with noise
+        # phi = arg [ R_0 - R_pi + i( R_pi/2 - R_3pi/2)]      Eq 1 (phi = -phaseA)
         real = phaseIntensity[0] - phaseIntensity[2] # calculate values - Eq 1 from paper
         imag = phaseIntensity[1] - phaseIntensity[3]
         real = real * random.uniform(ampNoiseLow, ampNoiseHigh) # detector noise
         imag = imag * random.uniform(ampNoiseLow, ampNoiseHigh)
 
         # calcualtes phase from R(k)'s
-        c = phase(complex(real, imag)) #extracts phase
-        #c -= slm_B_mask[i][maskCols-1-j] # uses psi0 correction on B to remove initial phase shift
+        c = phase(complex(real, imag)) #extracts phase (w/o correction, very distorted)
+
+        #Phase Disorder correction over reconstructed image. Must be done in software after physical value recorded
+        #c -= slm_B_mask[i][maskCols-1-j] # uses psi0 correction on B to remove initial phase shift, slightly less accurate
         c -= psi0_correction[i][j] #A's side of the correction mask
 
-        c *= -1 # c is negative thetaA, pushes positive
+        c *= -1 # c is negative thetaA, flips to positive
         c %= 2*math.pi #wrapping within 0-2pi
 
         reconstruction[i][j] = c # saves reconstruction
 
         accuracy[i][j] = slm[i][j] - reconstruction[i][j]
-        if accuracy[i][j] > math.pi:
+        if accuracy[i][j] > math.pi: #moves +/- changes into correct domain
             accuracy[i][j] -= 2*math.pi
         elif accuracy[i][j] < -1*math.pi:
             accuracy[i][j] += 2*math.pi
