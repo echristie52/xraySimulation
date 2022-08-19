@@ -91,12 +91,14 @@ def gaussian(): #creates gaussian array (Taylor's code)
 plt.close('all')
 
 #open SLM image
-testImage = Image.open("byu_cougar.jpg")
+testImage = Image.open("byu_test.png")
 testImage = ImageOps.grayscale(testImage)
 imageArray = asarray(testImage)
 
 maskRows = imageArray.shape[0] #numRows must be even, so I can split the beam in half
 maskCols = imageArray.shape[1]
+print("Rows: " + str(maskRows))
+print("Cols: " + str(maskCols))
 
 slm = np.multiply(imageArray, 2*math.pi/255.0) # scales image to 0-2pi phase changes
 
